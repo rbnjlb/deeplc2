@@ -56,12 +56,8 @@ import numpy as np
 from config import paths, data_config, label_config, model_config
 from utils import ensure_dir, simple_logger
 
-<<<<<<< HEAD
-=======
 # Print progress every N shards to reduce console noise
 PRINT_SHARD_EVERY = 30  # print progress every 30 shards
-
->>>>>>> 3d8c1f8 (Initial commit)
 
 def compute_returns_binary_alpha(
     mid: np.ndarray,
@@ -393,17 +389,12 @@ def build_sequences_sharded(
     # Track label distribution
     label_counter = Counter()
     
-<<<<<<< HEAD
-    def flush_shard(split_name: str, shard_idx: int):
-        """Write current shard buffer to disk and reset."""
-=======
     # Track total shards written for progress logging
     total_shards_written = 0
     
     def flush_shard(split_name: str, shard_idx: int):
         """Write current shard buffer to disk and reset."""
         nonlocal total_shards_written
->>>>>>> 3d8c1f8 (Initial commit)
         if not shard_X:
             return
         
@@ -451,18 +442,11 @@ def build_sequences_sharded(
         shard_X.clear()
         shard_y.clear()
         
-<<<<<<< HEAD
-        simple_logger(
-            f"Written {shard_filename}: {shard_size:,} sequences",
-            prefix="S3",
-        )
-=======
         # Increment total shards written
         total_shards_written += 1
         
         # Per-shard write messages removed to reduce console noise
         # Progress is printed every PRINT_SHARD_EVERY shards instead
->>>>>>> 3d8c1f8 (Initial commit)
     
     # Build sequences only for large-move indices
     simple_logger(
@@ -506,8 +490,6 @@ def build_sequences_sharded(
             else:
                 flush_shard("test", test_shard_idx)
                 test_shard_idx += 1
-<<<<<<< HEAD
-=======
             
             # Progress logging: print every PRINT_SHARD_EVERY shards
             if total_shards_written % PRINT_SHARD_EVERY == 0:
@@ -517,7 +499,6 @@ def build_sequences_sharded(
                     f"{len(train_shards)} train shards, {len(val_shards)} val shards, {len(test_shards)} test shards...",
                     prefix="S3",
                 )
->>>>>>> 3d8c1f8 (Initial commit)
         
         # Add to current shard buffer
         shard_X.append(X_seq)
@@ -535,20 +516,6 @@ def build_sequences_sharded(
                 val_shard_idx += 1
             else:
                 test_shard_idx += 1
-<<<<<<< HEAD
-        
-        current_split = split_name
-        global_seq_idx += 1
-        
-        # Progress logging
-        if (idx + 1) % 10_000 == 0:
-            simple_logger(
-                f"Processed {idx + 1:,}/{len(indices_filtered):,} filtered indices, "
-                f"{global_seq_idx:,} sequences, "
-                f"{len(train_shards)} train shards, {len(val_shards)} val shards, {len(test_shards)} test shards...",
-                prefix="S3",
-            )
-=======
             
             # Progress logging: print every PRINT_SHARD_EVERY shards
             if total_shards_written % PRINT_SHARD_EVERY == 0:
@@ -561,7 +528,6 @@ def build_sequences_sharded(
         
         current_split = split_name
         global_seq_idx += 1
->>>>>>> 3d8c1f8 (Initial commit)
     
     # Flush final shard
     if shard_X:
@@ -571,8 +537,6 @@ def build_sequences_sharded(
             flush_shard("val", val_shard_idx)
         else:
             flush_shard("test", test_shard_idx)
-<<<<<<< HEAD
-=======
         
         # Print progress if we haven't printed recently (for final shard)
         total_expected_shards = math.ceil(total_valid / max_seqs_per_shard) if max_seqs_per_shard > 0 else 0
@@ -583,7 +547,6 @@ def build_sequences_sharded(
                 f"{len(train_shards)} train shards, {len(val_shards)} val shards, {len(test_shards)} test shards...",
                 prefix="S3",
             )
->>>>>>> 3d8c1f8 (Initial commit)
     
     # Build shard index (sizes already tracked during shard writing)
     shard_index = {
@@ -611,8 +574,6 @@ def build_sequences_sharded(
         prefix="S3",
     )
     
-<<<<<<< HEAD
-=======
     # Final summary
     num_train_shards = len(train_shards)
     num_val_shards = len(val_shards)
@@ -623,7 +584,6 @@ def build_sequences_sharded(
         prefix="S3",
     )
     
->>>>>>> 3d8c1f8 (Initial commit)
     return shard_index
 
 
