@@ -5,25 +5,28 @@ Central configuration for the DeepLOB Binance BTCUSDT project.
 
 Edit this file to change paths, hyperparameters, sequence length, etc.
 
-CONFIG PRESETS:
+MODE SWITCHING:
 ==============
 
-1. DeepLOB baseline preset (3-class classification):
-   LABEL_MODE = "three_class"
-   NUM_CLASSES = 3
-   NORMALIZATION_MODE = "train_only"
-   THREE_CLASS_THRESHOLD = 0.0002
+To switch between binary and ternary modes, edit these two variables at the top:
 
-2. Extreme-move binary preset (α-quantile filtering):
-   LABEL_MODE = "binary_alpha"
-   LABEL_ALPHA_QUANTILE = 0.85
-   NUM_CLASSES = 2
-   NORMALIZATION_MODE = "train_only"
+    state = "binary"    # or "ternary"
+    alpha = 0.85        # Alpha threshold for binary mode (only used when state="binary")
+
+Modes:
+- "binary": 2-class classification (Down=0, Up=1) with α-quantile filtering
+- "ternary": 3-class classification (Down=0, Stationary=1, Up=2) DeepLOB baseline
+
+The configuration system will automatically apply the correct settings based on the selected mode.
 """
 
 from dataclasses import dataclass
 from pathlib import Path
 
+# ===== USER-SELECTABLE MODE =====
+# Change these two variables to switch between binary and ternary modes
+state = "binary"    # options: "binary", "ternary"
+alpha = 0.85        # Alpha threshold for binary extreme-move filtering (only used in binary mode)
 
 # --------- PATH CONFIG ----------
 
@@ -243,8 +246,15 @@ def configure_deeplob_baseline():
     NOTE: After calling this, you need to rebuild sequences:
         python S3_build_sequences_and_labels.py
     """
+    # Enforce ternary (3-class) mode
     label_config.label_mode = "three_class"
     label_config.three_class_threshold = 0.0002
+    
+    # Disable binary-alpha specific fields
+    label_config.label_alpha_quantile = None  # Not used in ternary mode
+    label_config.label_min_samples_per_class = None  # Not used in ternary mode
+    label_config.label_balance_enabled = False  # Not used in ternary mode
+    
     model_config.num_classes = get_num_classes()  # Will be 3
     
     model_config.use_extra_feature_branch = False
@@ -262,18 +272,28 @@ def configure_deeplob_baseline():
     simple_logger("IMPORTANT: Rebuild sequences with: python S3_build_sequences_and_labels.py", prefix="CONFIG")
 
 
-def configure_extreme_binary_alpha():
+def configure_extreme_binary_alpha(alpha: float):
     """
     Configure for extreme binary α-quantile experiment.
     
     This preset:
-    - Uses binary_alpha labels with high quantile (extreme moves only)
+    - Uses binary_alpha labels with specified quantile (extreme moves only)
     - Enables extra-feature branch
     - Uses train-only normalization
     - Sets training parameters optimized for binary classification
+    
+    Args:
+        alpha: Alpha quantile threshold (e.g., 0.85 for top 15% largest moves)
     """
+    # Enforce binary (2-class) mode
     label_config.label_mode = "binary_alpha"
-    label_config.label_alpha_quantile = 0.85  # Top 15% largest moves
+    label_config.label_alpha_quantile = alpha
+    label_config.label_min_samples_per_class = 1000  # Minimum samples per class
+    label_config.label_balance_enabled = True  # Enable label balancing
+    
+    # Disable ternary-specific fields
+    label_config.three_class_threshold = None  # Not used in binary mode
+    
     model_config.num_classes = get_num_classes()  # Will be 2
     
     model_config.use_extra_feature_branch = True
@@ -287,9 +307,15 @@ def configure_extreme_binary_alpha():
     training_config.early_stopping_patience = 7
     training_config.early_stopping_metric = "val_acc"  # Monitor accuracy for binary
     
-    simple_logger("Configured for extreme binary α experiment (binary_alpha, extra features)", prefix="CONFIG")
+    simple_logger(f"Configured for extreme binary α experiment (binary_alpha, alpha={alpha}, extra features)", prefix="CONFIG")
 
 
-# Uncomment one of the following to use a preset:
-configure_deeplob_baseline()  # Enable 3-class DeepLOB baseline experiment
-# configure_extreme_binary_alpha()
+# ===== AUTO DISPATCH BASED ON USER MODE =====
+print(f"[CONFIG] Loading mode: {state}")
+
+if state == "ternary":
+    configure_deeplob_baseline()
+elif state == "binary":
+    configure_extreme_binary_alpha(alpha)
+else:
+    raise ValueError(f"Invalid config state: {state}. Allowed values: 'binary', 'ternary'")
