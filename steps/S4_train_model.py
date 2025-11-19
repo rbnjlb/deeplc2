@@ -42,12 +42,8 @@ from config import (
 from lob.model_deeplob import build_deeplob_model
 from utils import ensure_dir, get_device, set_seed, simple_logger
 
-<<<<<<< HEAD
-=======
 # Print train shard progress every N shards to reduce console noise
 PRINT_TRAIN_SHARD_EVERY = 30  # only print 1 line every 30 train shards
-
->>>>>>> 3d8c1f8 (Initial commit)
 
 class EarlyStopping:
     """Early stopping on validation loss."""
@@ -493,22 +489,6 @@ def train():
                 running_loss = np.mean(shard_batch_losses)
                 running_acc = np.mean(shard_batch_accs)
                 
-<<<<<<< HEAD
-                # Log batch progress
-                elapsed_time = time.time() - epoch_start_time
-                log_batch_progress(
-                    epoch=epoch,
-                    shard_idx=shard_idx,
-                    total_shards=len(epoch_train_shards),
-                    batch_idx=batch_idx,
-                    total_batches=total_batches,
-                    batch_loss=batch_loss,
-                    running_loss=running_loss,
-                    running_acc=running_acc,
-                    samples_processed=train_total,
-                    elapsed_time=elapsed_time,
-                )
-=======
                 # Per-batch logging disabled to reduce console noise
                 # Progress is printed every PRINT_TRAIN_SHARD_EVERY shards instead
                 # Uncomment below to enable per-batch logging:
@@ -525,30 +505,16 @@ def train():
                 #     samples_processed=train_total,
                 #     elapsed_time=elapsed_time,
                 # )
->>>>>>> 3d8c1f8 (Initial commit)
 
             # Explicitly drop shard tensors and trigger GC before next shard
             del X_shard, lob_shard, extra_shard, y_shard, dataset, loader
             gc.collect()
 
-<<<<<<< HEAD
-            # Progress logging after each shard
-=======
             # Progress logging: print every PRINT_TRAIN_SHARD_EVERY shards or on final shard
->>>>>>> 3d8c1f8 (Initial commit)
             shard_time = time.time() - shard_start_time
             shard_avg_loss = np.mean(shard_batch_losses) if shard_batch_losses else 0.0
             shard_avg_acc = np.mean(shard_batch_accs) if shard_batch_accs else 0.0
             
-<<<<<<< HEAD
-            simple_logger(
-                f"Epoch {epoch:03d} - ✓ Completed train shard {shard_idx}/{len(epoch_train_shards)} "
-                f"({shard_size:,} samples, {shard_time:.1f}s) | "
-                f"Shard avg loss: {shard_avg_loss:.4f}, acc: {shard_avg_acc:.2%} | "
-                f"Total samples: {train_total:,}",
-                prefix="S4",
-            )
-=======
             shard_number = shard_idx  # shard_idx is already 1-based from enumerate(start=1)
             num_train_shards = len(epoch_train_shards)
             
@@ -560,7 +526,6 @@ def train():
                     f"Total samples: {train_total:,}",
                     prefix="S4",
                 )
->>>>>>> 3d8c1f8 (Initial commit)
 
         train_loss = train_loss_sum / max(train_total, 1)
         train_acc = train_correct / max(train_total, 1)
